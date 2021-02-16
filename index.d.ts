@@ -3,50 +3,87 @@
 // Definitions by: erdii https://github.com/erdii
 
 /*~ This is the module template file for class modules.
-*~ You should rename it to index.d.ts and place it in a folder with the same name as the module.
-*~ For example, if you were writing a file for "super-greeter", this
-*~ file should be 'super-greeter/index.d.ts'
-*/
+ *~ You should rename it to index.d.ts and place it in a folder with the same name as the module.
+ *~ For example, if you were writing a file for "super-greeter", this
+ *~ file should be 'super-greeter/index.d.ts'
+ */
 
 /*~ Note that ES6 modules cannot directly export class objects.
-*~ This file should be imported using the CommonJS-style:
-*~   import x = require('someLibrary');
-*~
-*~ Refer to the documentation to understand common
-*~ workarounds for this limitation of ES6 modules.
-*/
+ *~ This file should be imported using the CommonJS-style:
+ *~   import x = require('someLibrary');
+ *~
+ *~ Refer to the documentation to understand common
+ *~ workarounds for this limitation of ES6 modules.
+ */
 
-import { ClientOpts, RedisClient } from "redis";
+import { ClientOpts, RedisClient } from "redis";
 
 /*~ This declaration specifies that the class constructor function
-*~ is the exported object from the file
-*/
+ *~ is the exported object from the file
+ */
 export = RedisSMQ;
 
 /*~ Write your module's methods and properties in this class */
 declare class RedisSMQ {
 	constructor(options: RedisSMQ.ConstructorOptions);
 	quit(cb: RedisSMQ.Callback<string>): void;
-	createQueue(opts: RedisSMQ.CreateQueueOptions, cb: RedisSMQ.Callback<1>): void;
+	createQueue(
+		opts: RedisSMQ.CreateQueueOptions,
+		cb: RedisSMQ.Callback<1>
+	): void;
 	createQueueAsync(opts: RedisSMQ.CreateQueueOptions): Promise<1>;
 	listQueues(cb: RedisSMQ.Callback<string[]>): void;
 	listQueuesAsync(): Promise<string[]>;
-	deleteQueue(opts: RedisSMQ.DeleteQueueOptions, cb: RedisSMQ.Callback<1>): void;
+	deleteQueue(
+		opts: RedisSMQ.DeleteQueueOptions,
+		cb: RedisSMQ.Callback<1>
+	): void;
 	deleteQueueAsync(opts: RedisSMQ.DeleteQueueOptions): Promise<1>;
-	getQueueAttributes(opts: RedisSMQ.GetQueueAttributesOptions, cb: RedisSMQ.Callback<RedisSMQ.QueueAttributes>): void;
-	getQueueAttributesAsync(opts: RedisSMQ.GetQueueAttributesOptions): Promise<RedisSMQ.QueueAttributes>;
-	setQueueAttributes(opts: RedisSMQ.SetQueueAttributesOptions, cb: RedisSMQ.Callback<RedisSMQ.QueueAttributes>): void;
-	setQueueAttributesAsync(opts: RedisSMQ.SetQueueAttributesOptions): Promise<RedisSMQ.QueueAttributes>;
-	sendMessage(opts: RedisSMQ.SendMessageOptions, cb: RedisSMQ.Callback<string>): void;
+	getQueueAttributes(
+		opts: RedisSMQ.GetQueueAttributesOptions,
+		cb: RedisSMQ.Callback<RedisSMQ.QueueAttributes>
+	): void;
+	getQueueAttributesAsync(
+		opts: RedisSMQ.GetQueueAttributesOptions
+	): Promise<RedisSMQ.QueueAttributes>;
+	setQueueAttributes(
+		opts: RedisSMQ.SetQueueAttributesOptions,
+		cb: RedisSMQ.Callback<RedisSMQ.QueueAttributes>
+	): void;
+	setQueueAttributesAsync(
+		opts: RedisSMQ.SetQueueAttributesOptions
+	): Promise<RedisSMQ.QueueAttributes>;
+	sendMessage(
+		opts: RedisSMQ.SendMessageOptions,
+		cb: RedisSMQ.Callback<string>
+	): void;
 	sendMessageAsync(opts: RedisSMQ.SendMessageOptions): Promise<string>;
-	receiveMessage(opts: RedisSMQ.ReceiveMessageOptions, cb: RedisSMQ.Callback<RedisSMQ.QueueMessage|{}>): void;
-	receiveMessageAsync(opts: RedisSMQ.ReceiveMessageOptions): Promise<RedisSMQ.QueueMessage|{}>;
-	popMessage(opts: RedisSMQ.PopMessageOptions, cb: RedisSMQ.Callback<RedisSMQ.QueueMessage|{}>): void;
-	popMessageAsync(opts: RedisSMQ.PopMessageOptions): Promise<RedisSMQ.QueueMessage|{}>;
-	deleteMessage(opts: RedisSMQ.DeleteMessageOptions, cb: RedisSMQ.Callback<0|1>): void;
-	deleteMessageAsync(opts: RedisSMQ.DeleteMessageOptions): Promise<0|1>;
-	changeMessageVisibility(opts: RedisSMQ.ChangeMessageVisibilityOptions, cb: RedisSMQ.Callback<0|1>): void;
-	changeMessageVisibilityAsync(opts: RedisSMQ.ChangeMessageVisibilityOptions): Promise<0|1>;
+	receiveMessage(
+		opts: RedisSMQ.ReceiveMessageOptions,
+		cb: RedisSMQ.Callback<RedisSMQ.QueueMessage | {}>
+	): void;
+	receiveMessageAsync(
+		opts: RedisSMQ.ReceiveMessageOptions
+	): Promise<RedisSMQ.QueueMessage | {}>;
+	popMessage(
+		opts: RedisSMQ.PopMessageOptions,
+		cb: RedisSMQ.Callback<RedisSMQ.QueueMessage | {}>
+	): void;
+	popMessageAsync(
+		opts: RedisSMQ.PopMessageOptions
+	): Promise<RedisSMQ.QueueMessage | {}>;
+	deleteMessage(
+		opts: RedisSMQ.DeleteMessageOptions,
+		cb: RedisSMQ.Callback<0 | 1>
+	): void;
+	deleteMessageAsync(opts: RedisSMQ.DeleteMessageOptions): Promise<0 | 1>;
+	changeMessageVisibility(
+		opts: RedisSMQ.ChangeMessageVisibilityOptions,
+		cb: RedisSMQ.Callback<0 | 1>
+	): void;
+	changeMessageVisibilityAsync(
+		opts: RedisSMQ.ChangeMessageVisibilityOptions
+	): Promise<0 | 1>;
 }
 
 declare namespace RedisSMQ {
@@ -141,7 +178,6 @@ declare namespace RedisSMQ {
 		maxsize?: number;
 	}
 
-
 	export interface SendMessageOptions extends BaseOptions {
 		/**
 		 * Message for the queue
@@ -160,6 +196,14 @@ declare namespace RedisSMQ {
 		 * @memberof SendMessageOptions
 		 */
 		delay?: number;
+
+		/**
+		 * If true, delay will be treated as milliseconds instead of seconds.
+		 *
+		 * @type {boolean}
+		 * @memberof SendMessageOptions
+		 */
+		delayInMillis?: boolean;
 	}
 
 	export interface ReceiveMessageOptions extends BaseOptions {
@@ -172,6 +216,14 @@ declare namespace RedisSMQ {
 		 * @memberof ReceiveMessageOptions
 		 */
 		vt?: number;
+
+		/**
+		 * If true, vt will be treated as milliseconds instead of seconds.
+		 *
+		 * @type {boolean}
+		 * @memberof ReceiveMessageOptions
+		 */
+		vtInMillis?: boolean;
 	}
 
 	export interface PopMessageOptions extends BaseOptions {}
@@ -203,9 +255,15 @@ declare namespace RedisSMQ {
 		 * @memberof ChangeMessageVisibilityOptions
 		 */
 		vt: number;
+
+		/**
+		 * If true, vt will be treated as milliseconds instead of seconds.
+		 *
+		 * @type {boolean}
+		 * @memberof ChangeMessageVisibilityOptions
+		 */
+		vtInMillis?: boolean;
 	}
-
-
 
 	export interface QueueMessage {
 		/**

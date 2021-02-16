@@ -29,14 +29,16 @@ class RedisSMQ extends EventEmitter {
         this._getQueue = (qname, uid, cb) => {
             const mc = [
                 ["hmget", `${this.redisns}${qname}:Q`, "vt", "delay", "maxsize"],
-                ["time"]
+                ["time"],
             ];
             this.redis.multi(mc).exec((err, resp) => {
                 if (err) {
                     this._handleError(cb, err);
                     return;
                 }
-                if (resp[0][0] === null || resp[0][1] === null || resp[0][2] === null) {
+                if (resp[0][0] === null ||
+                    resp[0][1] === null ||
+                    resp[0][2] === null) {
                     this._handleError(cb, "queueNotFound");
                     return;
                 }
@@ -46,7 +48,7 @@ class RedisSMQ extends EventEmitter {
                     vt: parseInt(resp[0][0], 10),
                     delay: parseInt(resp[0][1], 10),
                     maxsize: parseInt(resp[0][2], 10),
-                    ts: ts
+                    ts: ts,
                 };
                 if (uid) {
                     uid = this._makeid(22);
@@ -73,7 +75,10 @@ class RedisSMQ extends EventEmitter {
             });
         };
         this._changeMessageVisibility = (options, q, cb) => {
-            this.redis.evalsha(this.changeMessageVisibility_sha1, 3, `${this.redisns}${options.qname}`, options.id, q.ts + options.vt * 1000, (err, resp) => {
+            if (!options.vtInMillis) {
+                options.vt = options.vt * 1000;
+            }
+            this.redis.evalsha(this.changeMessageVisibility_sha1, 3, `${this.redisns}${options.qname}`, options.id, q.ts + options.vt, (err, resp) => {
                 if (err) {
                     this._handleError(cb, err);
                     return;
@@ -86,7 +91,8 @@ class RedisSMQ extends EventEmitter {
             options.vt = options.vt != null ? options.vt : 30;
             options.delay = options.delay != null ? options.delay : 0;
             options.maxsize = options.maxsize != null ? options.maxsize : 65536;
-            if (this._validate(options, ["qname", "vt", "delay", "maxsize"], cb) === false)
+            if (this._validate(options, ["qname", "vt", "delay", "maxsize"], cb) ===
+                false)
                 return;
             this.redis.time((err, resp) => {
                 if (err) {
@@ -125,7 +131,13 @@ class RedisSMQ extends EventEmitter {
             const key = `${this.redisns}${options.qname}`;
             const mc = [
                 ["zrem", key, options.id],
-                ["hdel", `${key}:Q`, `${options.id}`, `${options.id}:rc`, `${options.id}:fr`]
+                [
+                    "hdel",
+                    `${key}:Q`,
+                    `${options.id}`,
+                    `${options.id}:rc`,
+                    `${options.id}:fr`,
+                ],
             ];
             this.redis.multi(mc).exec((err, resp) => {
                 if (err) {
@@ -146,7 +158,7 @@ class RedisSMQ extends EventEmitter {
             const key = `${this.redisns}${options.qname}`;
             const mc = [
                 ["del", `${key}:Q`, key],
-                ["srem", `${this.redisns}QUEUES`, options.qname]
+                ["srem", `${this.redisns}QUEUES`, options.qname],
             ];
             this.redis.multi(mc).exec((err, resp) => {
                 if (err) {
@@ -170,9 +182,19 @@ class RedisSMQ extends EventEmitter {
                     return;
                 }
                 const mc = [
-                    ["hmget", `${key}:Q`, "vt", "delay", "maxsize", "totalrecv", "totalsent", "created", "modified"],
+                    [
+                        "hmget",
+                        `${key}:Q`,
+                        "vt",
+                        "delay",
+                        "maxsize",
+                        "totalrecv",
+                        "totalsent",
+                        "created",
+                        "modified",
+                    ],
                     ["zcard", key],
-                    ["zcount", key, resp[0] + "000", "+inf"]
+                    ["zcount", key, resp[0] + "000", "+inf"],
                 ];
                 this.redis.multi(mc).exec((err, resp) => {
                     if (err) {
@@ -192,7 +214,7 @@ class RedisSMQ extends EventEmitter {
                         created: parseInt(resp[0][5], 10),
                         modified: parseInt(resp[0][6], 10),
                         msgs: resp[1],
-                        hiddenmsgs: resp[2]
+                        hiddenmsgs: resp[2],
                     };
                     cb(null, o);
                 });
@@ -213,7 +235,7 @@ class RedisSMQ extends EventEmitter {
                     message: resp[1],
                     rc: resp[2],
                     fr: Number(resp[3]),
-                    sent: Number(parseInt(resp[0].slice(0, 10), 36) / 1000)
+                    sent: Number(parseInt(resp[0].slice(0, 10), 36) / 1000),
                 };
                 cb(null, o);
             };
@@ -281,7 +303,7 @@ class RedisSMQ extends EventEmitter {
                     return;
                 }
                 this.changeMessageVisibility_sha1 = resp;
-                this.emit('scriptload:changeMessageVisibility');
+                this.emit("scriptload:changeMessageVisibility");
             });
         };
         this.listQueues = (cb) => {
@@ -334,7 +356,10 @@ class RedisSMQ extends EventEmitter {
             this.redis.evalsha(this.popMessage_sha1, 2, `${this.redisns}${options.qname}`, q.ts, this._handleReceivedMessage(cb));
         };
         this._receiveMessage = (options, q, cb) => {
-            this.redis.evalsha(this.receiveMessage_sha1, 3, `${this.redisns}${options.qname}`, q.ts, q.ts + options.vt * 1000, this._handleReceivedMessage(cb));
+            if (!options.vtInMillis) {
+                options.vt = options.vt * 1000;
+            }
+            this.redis.evalsha(this.receiveMessage_sha1, 3, `${this.redisns}${options.qname}`, q.ts, q.ts + options.vt, this._handleReceivedMessage(cb));
         };
         this.sendMessage = (options, cb) => {
             if (this._validate(options, ["qname"], cb) === false)
@@ -355,11 +380,14 @@ class RedisSMQ extends EventEmitter {
                     this._handleError(cb, "messageTooLong");
                     return;
                 }
+                if (!options.delayInMillis) {
+                    options.delay = options.delay * 1000;
+                }
                 const key = `${this.redisns}${options.qname}`;
                 const mc = [
-                    ["zadd", key, q.ts + options.delay * 1000, q.uid],
+                    ["zadd", key, q.ts + options.delay, q.uid],
                     ["hset", `${key}:Q`, q.uid, options.message],
-                    ["hincrby", `${key}:Q`, "totalsent", 1]
+                    ["hincrby", `${key}:Q`, "totalsent", 1],
                 ];
                 if (this.realtime) {
                     mc.push(["zcard", key]);
@@ -402,12 +430,21 @@ class RedisSMQ extends EventEmitter {
                         return;
                     }
                     const mc = [
-                        ["hset", `${this.redisns}${options.qname}:Q`, "modified", resp[0]]
+                        [
+                            "hset",
+                            `${this.redisns}${options.qname}:Q`,
+                            "modified",
+                            resp[0],
+                        ],
                     ];
                     for (let item of k) {
-                        mc.push(["hset", `${this.redisns}${options.qname}:Q`, item, options[item]]);
+                        mc.push([
+                            "hset",
+                            `${this.redisns}${options.qname}:Q`,
+                            item,
+                            options[item],
+                        ]);
                     }
-                    ;
                     this.redis.multi(mc).exec((err) => {
                         if (err) {
                             this._handleError(cb, err);
@@ -424,7 +461,12 @@ class RedisSMQ extends EventEmitter {
                 _err = new Error();
                 _err.name = err;
                 let ref = null;
-                _err.message = ((ref = this._ERRORS) != null ? typeof ref[err] === "function" ? ref[err](data) : void 0 : void 0) || "unkown";
+                _err.message =
+                    ((ref = this._ERRORS) != null
+                        ? typeof ref[err] === "function"
+                            ? ref[err](data)
+                            : void 0
+                        : void 0) || "unkown";
             }
             else {
                 _err = err;
@@ -439,7 +481,7 @@ class RedisSMQ extends EventEmitter {
         };
         this._VALID = {
             qname: /^([a-zA-Z0-9_-]){1,160}$/,
-            id: /^([a-zA-Z0-9:]){32}$/
+            id: /^([a-zA-Z0-9:]){32}$/,
         };
         this._validate = (o, items, cb) => {
             for (let item of items) {
@@ -447,7 +489,9 @@ class RedisSMQ extends EventEmitter {
                     case "qname":
                     case "id":
                         if (!o[item]) {
-                            this._handleError(cb, "missingParameter", { item: item });
+                            this._handleError(cb, "missingParameter", {
+                                item: item,
+                            });
                             return false;
                         }
                         o[item] = o[item].toString();
@@ -459,34 +503,47 @@ class RedisSMQ extends EventEmitter {
                     case "vt":
                     case "delay":
                         o[item] = parseInt(o[item], 10);
-                        if (_.isNaN(o[item]) || !_.isNumber(o[item]) || o[item] < 0 || o[item] > 9999999) {
-                            this._handleError(cb, "invalidValue", { item: item, min: 0, max: 9999999 });
+                        if (_.isNaN(o[item]) ||
+                            !_.isNumber(o[item]) ||
+                            o[item] < 0 ||
+                            o[item] > 9999999) {
+                            this._handleError(cb, "invalidValue", {
+                                item: item,
+                                min: 0,
+                                max: 9999999,
+                            });
                             return false;
                         }
                         break;
                     case "maxsize":
                         o[item] = parseInt(o[item], 10);
-                        if (_.isNaN(o[item]) || !_.isNumber(o[item]) || o[item] < 1024 || o[item] > 65536) {
+                        if (_.isNaN(o[item]) ||
+                            !_.isNumber(o[item]) ||
+                            o[item] < 1024 ||
+                            o[item] > 65536) {
                             if (o[item] !== -1) {
-                                this._handleError(cb, "invalidValue", { item: item, min: 1024, max: 65536 });
+                                this._handleError(cb, "invalidValue", {
+                                    item: item,
+                                    min: 1024,
+                                    max: 65536,
+                                });
                                 return false;
                             }
                         }
                         break;
                 }
             }
-            ;
             return o;
         };
         this.ERRORS = {
-            "noAttributeSupplied": "No attribute was supplied",
-            "missingParameter": "No <%= item %> supplied",
-            "invalidFormat": "Invalid <%= item %> format",
-            "invalidValue": "<%= item %> must be between <%= min %> and <%= max %>",
-            "messageNotString": "Message must be a string",
-            "messageTooLong": "Message too long",
-            "queueNotFound": "Queue not found",
-            "queueExists": "Queue exists"
+            noAttributeSupplied: "No attribute was supplied",
+            missingParameter: "No <%= item %> supplied",
+            invalidFormat: "Invalid <%= item %> format",
+            invalidValue: "<%= item %> must be between <%= min %> and <%= max %>",
+            messageNotString: "Message must be a string",
+            messageTooLong: "Message too long",
+            queueNotFound: "Queue not found",
+            queueExists: "Queue exists",
         };
         if (Promise) {
             _.forEach([
@@ -500,18 +557,18 @@ class RedisSMQ extends EventEmitter {
                 "receiveMessage",
                 "sendMessage",
                 "setQueueAttributes",
-                "quit"
+                "quit",
             ], this.asyncify);
         }
         const opts = _.extend({
             host: "127.0.0.1",
             port: 6379,
             options: {
-                password: options.password || null
+                password: options.password || null,
             },
             client: null,
             ns: "rsmq",
-            realtime: false
+            realtime: false,
         }, options);
         opts.options.host = opts.host;
         opts.options.port = opts.port;
@@ -546,7 +603,7 @@ class RedisSMQ extends EventEmitter {
         this._initErrors();
     }
     _formatZeroPad(num, count) {
-        return ((Math.pow(10, count) + num) + "").substr(1);
+        return (Math.pow(10, count) + num + "").substr(1);
     }
     _makeid(len) {
         let text = "";
