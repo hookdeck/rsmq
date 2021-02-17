@@ -1,6 +1,6 @@
 {
-  "name": "rsmq",
-  "description": "A really simple message queue based on Redis",
+  "name": "rsmq-ms",
+  "description": "A forked of the really simple message queue based on Redis with millisecond delay support.",
   "version": "0.12.3",
   "license": "MIT",
   "author": "P. Liess <smrchy+npm@gmail.com>",
@@ -34,10 +34,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "http://github.com/smrchy/rsmq.git"
+    "url": "http://github.com/hookdeck/rsmq.git"
   },
   "bugs": {
-    "url": "https://github.com/smrchy/rsmq/issues"
+    "url": "https://github.com/hookdeck/rsmq/issues"
   },
   "main": "./index.js",
   "types": "./index.d.ts",
