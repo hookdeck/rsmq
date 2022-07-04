@@ -58,6 +58,11 @@ declare class RedisSMQ {
 		cb: RedisSMQ.Callback<string>
 	): void;
 	sendMessageAsync(opts: RedisSMQ.SendMessageOptions): Promise<string>;
+	messageExists(
+		opts: RedisSMQ.MessageExistsOptions,
+		cb: RedisSMQ.Callback<string>
+	): void;
+	messageExistsAsync(opts: RedisSMQ.MessageExistsOptions): Promise<string>;
 	receiveMessage(
 		opts: RedisSMQ.ReceiveMessageOptions,
 		cb: RedisSMQ.Callback<RedisSMQ.QueueMessage | {}>
@@ -188,6 +193,14 @@ declare namespace RedisSMQ {
 		message: string;
 
 		/**
+		 * Key for the message to deduplicate unique messages
+		 *
+		 * @type {string}
+		 * @memberof SendMessageOptions
+		 */
+		qkey?: string;
+
+		/**
 		 * *(Default: queue settings)*
 		 * The time in seconds that the delivery of the message will be delayed.
 		 * Allowed values: 0-9999999 (around 115 days)
@@ -204,6 +217,16 @@ declare namespace RedisSMQ {
 		 * @memberof SendMessageOptions
 		 */
 		delayInMillis?: boolean;
+	}
+
+	export interface MessageExistsOptions extends BaseOptions {
+		/**
+		 * Key for the message to deduplicate unique messages
+		 *
+		 * @type {string}
+		 * @memberof SendMessageOptions
+		 */
+		qkey: string;
 	}
 
 	export interface ReceiveMessageOptions extends BaseOptions {

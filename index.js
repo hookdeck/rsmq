@@ -383,10 +383,11 @@ class RedisSMQ extends EventEmitter {
                 if (!options.delayInMillis) {
                     options.delay = options.delay * 1000;
                 }
+                const qkey = options.qkey || q.uid;
                 const key = `${this.redisns}${options.qname}`;
                 const mc = [
-                    ["zadd", key, q.ts + options.delay, q.uid],
-                    ["hset", `${key}:Q`, q.uid, options.message],
+                    ["zadd", key, q.ts + options.delay, qkey],
+                    ["hset", `${key}:Q`, qkey, options.message],
                     ["hincrby", `${key}:Q`, "totalsent", 1],
                 ];
                 if (this.realtime) {
@@ -400,8 +401,25 @@ class RedisSMQ extends EventEmitter {
                     if (this.realtime) {
                         this.redis.publish(`${this.redisns}rt:${options.qname}`, resp[3]);
                     }
-                    cb(null, q.uid);
+                    cb(null, qkey);
                 });
+            });
+        };
+        this.messageExists = (options, cb) => {
+            if (this._validate(options, ["qname"], cb) === false)
+                return;
+            if (this._validate(options, ["qkey"], cb) === false)
+                return;
+            const key = `${this.redisns}${options.qname}`;
+            const mc = [
+                ["hexists", `${key}:Q`, options.qkey],
+            ];
+            this.redis.multi(mc).exec((err, resp) => {
+                if (err) {
+                    this._handleError(cb, err);
+                    return;
+                }
+                cb(null, resp[0]);
             });
         };
         this.setQueueAttributes = (options, cb) => {
@@ -481,12 +499,12 @@ class RedisSMQ extends EventEmitter {
         };
         this._VALID = {
             qname: /^([a-zA-Z0-9_-]){1,160}$/,
-            id: /^([a-zA-Z0-9:]){32}$/,
         };
         this._validate = (o, items, cb) => {
             for (let item of items) {
                 switch (item) {
                     case "qname":
+                    case "qkey":
                     case "id":
                         if (!o[item]) {
                             this._handleError(cb, "missingParameter", {
@@ -495,7 +513,7 @@ class RedisSMQ extends EventEmitter {
                             return false;
                         }
                         o[item] = o[item].toString();
-                        if (!this._VALID[item].test(o[item])) {
+                        if ((item in this._VALID) && !this._VALID[item].test(o[item])) {
                             this._handleError(cb, "invalidFormat", { item: item });
                             return false;
                         }
@@ -556,6 +574,7 @@ class RedisSMQ extends EventEmitter {
                 "popMessage",
                 "receiveMessage",
                 "sendMessage",
+                "messageExists",
                 "setQueueAttributes",
                 "quit",
             ], this.asyncify);
