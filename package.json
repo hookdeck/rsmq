@@ -10,6 +10,8 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
+    "build:test": "coffee -c test/test.coffee",
+    "watch:test": "coffee -c -w test/test.coffee",
     "test": "mocha ./test/test.js"
   },
   "dependencies": {
