@@ -528,13 +528,6 @@ describe 'Redis-Simple-Message-Queue Test', ->
 				return
 			return
 
-		it 'Should fail: Delete a message with invalid id', (done) ->
-			rsmq.deleteMessage {qname: queue1.name, id:"sdafsdf"}, (err, resp) ->
-				err.message.should.equal("Invalid id format")
-				done()
-				return
-			return
-
 		it 'Delete message 1. Should return 1', (done) ->
 			rsmq.deleteMessage {qname: queue1.name, id: q1m1.id}, (err, resp) ->
 				resp.should.equal(1)
@@ -680,6 +673,33 @@ describe 'Redis-Simple-Message-Queue Test', ->
 		it 'check queue1 length. Should be 3', (done) ->
 			Q1LENGTH.should.equal(3)
 			done()
+			return
+		return
+
+	describe 'Custom queue key', ->
+		it 'Send a message to queue1', (done) ->
+			rsmq.sendMessage {qname: queue1.name, qkey: 'somekey', message:"Hello World"}, (err, resp) ->
+				should.not.exist(err)
+				done()
+				return
+			return
+
+		it 'wait 100ms', (done) -> setTimeout(done, 100)
+
+		it 'check message exists', (done) ->
+			rsmq.messageExists {qname: queue1.name, qkey: 'somekey'}, (err, resp) ->
+				should.not.exist(err)
+				should(resp).equal(1)
+				done()
+				return
+			return
+
+		it 'check message does not exists', (done) ->
+			rsmq.messageExists {qname: queue1.name, qkey: 'otherkey'}, (err, resp) ->
+				should.not.exist(err)
+				should(resp).equal(0)
+				done()
+				return
 			return
 		return
 	return
