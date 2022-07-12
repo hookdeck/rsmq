@@ -10,9 +10,9 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "build:test": "coffee -c test/test.coffee",
-    "watch:test": "coffee -c -w test/test.coffee",
-    "test": "mocha ./test/test.js"
+    "build:test": "coffee -c -m test/test.coffee",
+    "watch:test": "coffee -c -m -w test/test.coffee",
+    "test": "mocha -r source-map-support/register ./test/test.js"
   },
   "dependencies": {
     "@types/redis": "^2.8.28",
@@ -24,6 +24,7 @@
     "coffeescript": "^2.5.1",
     "mocha": "^7.0.1",
     "should": "^13.2.3",
+    "source-map-support": "^0.5.21",
     "ts-loader": "^6.2.1",
     "typescript": "4.1.3"
   },

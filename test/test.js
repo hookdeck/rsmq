@@ -911,6 +911,10 @@
       it('wait 100ms', function(done) {
         return setTimeout(done, 100);
       });
+      it('check queue1 length. Should be 4', function(done) {
+        Q1LENGTH.should.equal(4);
+        done();
+      });
       it('check message exists', function(done) {
         rsmq.messageExists({
           qname: queue1.name,
@@ -931,7 +935,26 @@
           done();
         });
       });
+      it('Send a duplicate message to queue1', function(done) {
+        rsmq.sendMessage({
+          qname: queue1.name,
+          qkey: 'somekey',
+          message: "Hello 2"
+        }, function(err, resp) {
+          should.not.exist(err);
+          done();
+        });
+      });
+      it('wait 100ms', function(done) {
+        return setTimeout(done, 100);
+      });
+      it('check queue1 length. Should still be 4', function(done) {
+        Q1LENGTH.should.equal(4);
+        done();
+      });
     });
   });
 
 }).call(this);
+
+//# sourceMappingURL=test.js.map

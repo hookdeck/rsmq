@@ -686,6 +686,11 @@ describe 'Redis-Simple-Message-Queue Test', ->
 
 		it 'wait 100ms', (done) -> setTimeout(done, 100)
 
+		it 'check queue1 length. Should be 4', (done) ->
+			Q1LENGTH.should.equal(4)
+			done()
+			return
+
 		it 'check message exists', (done) ->
 			rsmq.messageExists {qname: queue1.name, qkey: 'somekey'}, (err, resp) ->
 				should.not.exist(err)
@@ -700,6 +705,20 @@ describe 'Redis-Simple-Message-Queue Test', ->
 				should(resp).equal(0)
 				done()
 				return
+			return
+
+		it 'Send a duplicate message to queue1', (done) ->
+			rsmq.sendMessage {qname: queue1.name, qkey: 'somekey', message:"Hello 2"}, (err, resp) ->
+				should.not.exist(err)
+				done()
+				return
+			return
+
+		it 'wait 100ms', (done) -> setTimeout(done, 100)
+
+		it 'check queue1 length. Should still be 4', (done) ->
+			Q1LENGTH.should.equal(4)
+			done()
 			return
 		return
 	return
