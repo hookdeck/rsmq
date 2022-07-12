@@ -1,7 +1,7 @@
 {
   "name": "rsmq-ms",
   "description": "A forked of the really simple message queue based on Redis with millisecond delay support.",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "license": "MIT",
   "author": "P. Liess <smrchy+npm@gmail.com>",
   "engines": {
