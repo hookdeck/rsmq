@@ -281,6 +281,23 @@ class RedisSMQ extends EventEmitter {
 			end
 			redis.call("ZADD", KEYS[1], KEYS[3], KEYS[2])
 			return 1`;
+            const script_sendMessage = `local set_key = KEYS[1]
+			local hash_key = KEYS[2]
+			local qkey = ARGV[1]
+			local score = ARGV[2]
+			local message = ARGV[3]
+
+			local rc = redis.call("HEXISTS", hash_key, qkey)
+
+			if rc == 1 then
+				return 0
+			end
+
+			redis.call("ZADD", set_key, score, qkey)
+			redis.call("HSET", hash_key, qkey, message)
+			redis.call("HINCRBY", hash_key, "totalsent", 1)
+
+			return 1`;
             this.redis.script("load", script_popMessage, (err, resp) => {
                 if (err) {
                     console.log(err);
@@ -304,6 +321,14 @@ class RedisSMQ extends EventEmitter {
                 }
                 this.changeMessageVisibility_sha1 = resp;
                 this.emit("scriptload:changeMessageVisibility");
+            });
+            this.redis.script("load", script_sendMessage, (err, resp) => {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+                this.sendMessage_sha1 = resp;
+                this.emit("scriptload:sendMessage");
             });
         };
         this.listQueues = (cb) => {
@@ -361,6 +386,26 @@ class RedisSMQ extends EventEmitter {
             }
             this.redis.evalsha(this.receiveMessage_sha1, 3, `${this.redisns}${options.qname}`, q.ts, q.ts + options.vt, this._handleReceivedMessage(cb));
         };
+        this._sendMessage = (options, q, cb) => {
+            const qkey = options.qkey || q.uid;
+            const key = `${this.redisns}${options.qname}`;
+            const mc = [
+                ['evalsha', this.sendMessage_sha1, 2, key, `${key}:Q`, qkey, q.ts + options.delay, options.message]
+            ];
+            if (this.realtime) {
+                mc.push(["zcard", key]);
+            }
+            this.redis.multi(mc).exec((err, resp) => {
+                if (err) {
+                    this._handleError(cb, err);
+                    return;
+                }
+                if (this.realtime && resp[0]) {
+                    this.redis.publish(`${this.redisns}rt:${options.qname}`, resp[1]);
+                }
+                cb(null, qkey);
+            });
+        };
         this.sendMessage = (options, cb) => {
             if (this._validate(options, ["qname"], cb) === false)
                 return;
@@ -383,25 +428,12 @@ class RedisSMQ extends EventEmitter {
                 if (!options.delayInMillis) {
                     options.delay = options.delay * 1000;
                 }
-                const qkey = options.qkey || q.uid;
-                const key = `${this.redisns}${options.qname}`;
-                const mc = [
-                    ["zadd", key, q.ts + options.delay, qkey],
-                    ["hset", `${key}:Q`, qkey, options.message],
-                    ["hincrby", `${key}:Q`, "totalsent", 1],
-                ];
-                if (this.realtime) {
-                    mc.push(["zcard", key]);
+                if (this.sendMessage_sha1) {
+                    this._sendMessage(options, q, cb);
+                    return;
                 }
-                this.redis.multi(mc).exec((err, resp) => {
-                    if (err) {
-                        this._handleError(cb, err);
-                        return;
-                    }
-                    if (this.realtime) {
-                        this.redis.publish(`${this.redisns}rt:${options.qname}`, resp[3]);
-                    }
-                    cb(null, qkey);
+                this.on("scriptload:receiveMessage", () => {
+                    this._sendMessage(options, q, cb);
                 });
             });
         };
