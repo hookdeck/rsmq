@@ -556,11 +556,11 @@ class RedisSMQ extends EventEmitter {
                         if (_.isNaN(o[item]) ||
                             !_.isNumber(o[item]) ||
                             o[item] < 0 ||
-                            o[item] > 9999999) {
+                            o[item] > 9999999000) {
                             this._handleError(cb, "invalidValue", {
                                 item: item,
                                 min: 0,
-                                max: 9999999,
+                                max: 9999999000,
                             });
                             return false;
                         }

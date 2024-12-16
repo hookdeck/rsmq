@@ -197,7 +197,7 @@
           qname: queue1.name,
           vt: -20
         }, function(err, resp) {
-          err.message.should.equal("vt must be between 0 and 9999999");
+          err.message.should.equal("vt must be between 0 and 9999999000");
           done();
         });
       });
@@ -206,7 +206,7 @@
           qname: queue1.name,
           vt: -20
         }).should.be.rejectedWith(Error, {
-          message: "vt must be between 0 and 9999999"
+          message: "vt must be between 0 and 9999999000"
         });
       });
       it('Should fail: Create a new queue with non numeric vt', function(done) {
@@ -214,7 +214,7 @@
           qname: queue1.name,
           vt: "not_a_number"
         }, function(err, resp) {
-          err.message.should.equal("vt must be between 0 and 9999999");
+          err.message.should.equal("vt must be between 0 and 9999999000");
           done();
         });
       });
@@ -223,15 +223,15 @@
           qname: queue1.name,
           vt: "not_a_number"
         }).should.be.rejectedWith(Error, {
-          message: "vt must be between 0 and 9999999"
+          message: "vt must be between 0 and 9999999000"
         });
       });
       it('Should fail: Create a new queue with vt too high', function(done) {
         rsmq.createQueue({
           qname: queue1.name,
-          vt: 10000000
+          vt: 10000000000
         }, function(err, resp) {
-          err.message.should.equal("vt must be between 0 and 9999999");
+          err.message.should.equal("vt must be between 0 and 9999999000");
           done();
         });
       });
@@ -240,7 +240,7 @@
           qname: queue1.name,
           delay: -20
         }, function(err, resp) {
-          err.message.should.equal("delay must be between 0 and 9999999");
+          err.message.should.equal("delay must be between 0 and 9999999000");
           done();
         });
       });
@@ -249,16 +249,16 @@
           qname: queue1.name,
           delay: "not_a_number"
         }, function(err, resp) {
-          err.message.should.equal("delay must be between 0 and 9999999");
+          err.message.should.equal("delay must be between 0 and 9999999000");
           done();
         });
       });
       it('Should fail: Create a new queue with delay too high', function(done) {
         rsmq.createQueue({
           qname: queue1.name,
-          delay: 10000000
+          delay: 10000000000
         }, function(err, resp) {
-          err.message.should.equal("delay must be between 0 and 9999999");
+          err.message.should.equal("delay must be between 0 and 9999999000");
           done();
         });
       });
@@ -468,7 +468,7 @@
           qname: queue1.name,
           vt: -5
         }, function(err, resp) {
-          err.message.should.equal("vt must be between 0 and 9999999");
+          err.message.should.equal("vt must be between 0 and 9999999000");
           done();
         });
       });

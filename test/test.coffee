@@ -134,42 +134,42 @@ describe 'Redis-Simple-Message-Queue Test', ->
 			return
 		it 'Should fail: Create a new queue with negative vt', (done) ->
 			rsmq.createQueue {qname: queue1.name, vt: -20}, (err, resp) ->
-				err.message.should.equal("vt must be between 0 and 9999999")
+				err.message.should.equal("vt must be between 0 and 9999999000")
 				done()
 				return
 			return
 		it 'Should fail: Create a new queue with negative vt - using createQueueAsync', () ->
-			return rsmq.createQueueAsync({qname: queue1.name, vt: -20}).should.be.rejectedWith(Error, { message: "vt must be between 0 and 9999999" })
+			return rsmq.createQueueAsync({qname: queue1.name, vt: -20}).should.be.rejectedWith(Error, { message: "vt must be between 0 and 9999999000" })
 
 		it 'Should fail: Create a new queue with non numeric vt', (done) ->
 			rsmq.createQueue {qname: queue1.name, vt: "not_a_number"}, (err, resp) ->
-				err.message.should.equal("vt must be between 0 and 9999999")
+				err.message.should.equal("vt must be between 0 and 9999999000")
 				done()
 				return
 			return
 		it 'Should fail: Create a new queue with non numeric vt', () ->
-			return rsmq.createQueueAsync({qname: queue1.name, vt: "not_a_number"}).should.be.rejectedWith(Error, { message: "vt must be between 0 and 9999999" })
+			return rsmq.createQueueAsync({qname: queue1.name, vt: "not_a_number"}).should.be.rejectedWith(Error, { message: "vt must be between 0 and 9999999000" })
 		it 'Should fail: Create a new queue with vt too high', (done) ->
-			rsmq.createQueue {qname: queue1.name, vt: 10000000}, (err, resp) ->
-				err.message.should.equal("vt must be between 0 and 9999999")
+			rsmq.createQueue {qname: queue1.name, vt: 10000000000}, (err, resp) ->
+				err.message.should.equal("vt must be between 0 and 9999999000")
 				done()
 				return
 			return
 		it 'Should fail: Create a new queue with negative delay', (done) ->
 			rsmq.createQueue {qname: queue1.name, delay: -20}, (err, resp) ->
-				err.message.should.equal("delay must be between 0 and 9999999")
+				err.message.should.equal("delay must be between 0 and 9999999000")
 				done()
 				return
 			return
 		it 'Should fail: Create a new queue with non numeric delay', (done) ->
 			rsmq.createQueue {qname: queue1.name, delay: "not_a_number"}, (err, resp) ->
-				err.message.should.equal("delay must be between 0 and 9999999")
+				err.message.should.equal("delay must be between 0 and 9999999000")
 				done()
 				return
 			return
 		it 'Should fail: Create a new queue with delay too high', (done) ->
-			rsmq.createQueue {qname: queue1.name, delay: 10000000}, (err, resp) ->
-				err.message.should.equal("delay must be between 0 and 9999999")
+			rsmq.createQueue {qname: queue1.name, delay: 10000000000}, (err, resp) ->
+				err.message.should.equal("delay must be between 0 and 9999999000")
 				done()
 				return
 			return
@@ -345,7 +345,7 @@ describe 'Redis-Simple-Message-Queue Test', ->
 
 		it 'Should fail:setQueueAttributes: Should not accept negative value', (done) ->
 			rsmq.setQueueAttributes {qname: queue1.name, vt: -5}, (err, resp) ->
-				err.message.should.equal("vt must be between 0 and 9999999")
+				err.message.should.equal("vt must be between 0 and 9999999000")
 				done()
 				return
 			return
