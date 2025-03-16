@@ -404,22 +404,22 @@ class RedisSMQ extends EventEmitter {
 		//
 		// {id, message, rc, fr}
 
-		const script_popMessage = `local msg = redis.call("ZRANGEBYSCORE", KEYS[1], "-inf", KEYS[2], "LIMIT", "0", "1")
+		const script_popMessage = `local msg = redis.call("ZRANGEBYSCORE", KEYS[1], "-inf", KEYS[3], "LIMIT", "0", "1")
 			if #msg == 0 then
 				return {}
 			end
-			redis.call("HINCRBY", KEYS[1] .. ":Q", "totalrecv", 1)
-			local mbody = redis.call("HGET", KEYS[1] .. ":Q", msg[1])
-			local rc = redis.call("HINCRBY", KEYS[1] .. ":Q", msg[1] .. ":rc", 1)
+			redis.call("HINCRBY", KEYS[2], "totalrecv", 1)
+			local mbody = redis.call("HGET", KEYS[2], msg[1])
+			local rc = redis.call("HINCRBY", KEYS[2], msg[1] .. ":rc", 1)
 			local o = {msg[1], mbody, rc}
 			if rc==1 then
-				table.insert(o, KEYS[2])
+				table.insert(o, KEYS[3])
 			else
-				local fr = redis.call("HGET", KEYS[1] .. ":Q", msg[1] .. ":fr")
+				local fr = redis.call("HGET", KEYS[2], msg[1] .. ":fr")
 				table.insert(o, fr)
 			end
 			redis.call("ZREM", KEYS[1], msg[1])
-			redis.call("HDEL", KEYS[1] .. ":Q", msg[1], msg[1] .. ":rc", msg[1] .. ":fr")
+			redis.call("HDEL", KEYS[2], msg[1], msg[1] .. ":rc", msg[1] .. ":fr")
 			return o`;
 
 		// The receiveMessage LUA Script
@@ -440,20 +440,20 @@ class RedisSMQ extends EventEmitter {
 		//
 		// {id, message, rc, fr}
 
-		const script_receiveMessage = `local msg = redis.call("ZRANGEBYSCORE", KEYS[1], "-inf", KEYS[2], "LIMIT", "0", "1")
+		const script_receiveMessage = `local msg = redis.call("ZRANGEBYSCORE", KEYS[1], "-inf", KEYS[3], "LIMIT", "0", "1")
 			if #msg == 0 then
 				return {}
 			end
-			redis.call("ZADD", KEYS[1], KEYS[3], msg[1])
-			redis.call("HINCRBY", KEYS[1] .. ":Q", "totalrecv", 1)
-			local mbody = redis.call("HGET", KEYS[1] .. ":Q", msg[1])
-			local rc = redis.call("HINCRBY", KEYS[1] .. ":Q", msg[1] .. ":rc", 1)
+			redis.call("ZADD", KEYS[1], KEYS[4], msg[1])
+			redis.call("HINCRBY", KEYS[2], "totalrecv", 1)
+			local mbody = redis.call("HGET", KEYS[2], msg[1])
+			local rc = redis.call("HINCRBY", KEYS[2], msg[1] .. ":rc", 1)
 			local o = {msg[1], mbody, rc}
 			if rc==1 then
-				redis.call("HSET", KEYS[1] .. ":Q", msg[1] .. ":fr", KEYS[2])
-				table.insert(o, KEYS[2])
+				redis.call("HSET", KEYS[2], msg[1] .. ":fr", KEYS[3])
+				table.insert(o, KEYS[3])
 			else
-				local fr = redis.call("HGET", KEYS[1] .. ":Q", msg[1] .. ":fr")
+				local fr = redis.call("HGET", KEYS[2], msg[1] .. ":fr")
 				table.insert(o, fr)
 			end
 			return o`;
@@ -595,8 +595,9 @@ class RedisSMQ extends EventEmitter {
 	private _popMessage = (options, q, cb) => {
 		this.redis.evalsha(
 			this.popMessage_sha1,
-			2,
+			3,
 			`${this.redisns}${options.qname}`,
+			`${this.redisns}${options.qname}:Q`,
 			q.ts,
 			this._handleReceivedMessage(cb)
 		);
@@ -609,8 +610,9 @@ class RedisSMQ extends EventEmitter {
 
 		this.redis.evalsha(
 			this.receiveMessage_sha1,
-			3,
+			4,
 			`${this.redisns}${options.qname}`,
+			`${this.redisns}${options.qname}:Q`,
 			q.ts,
 			q.ts + options.vt,
 			this._handleReceivedMessage(cb)
